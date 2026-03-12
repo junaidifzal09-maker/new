@@ -120,9 +120,14 @@ export default function Home() {
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Thousands of authentic products. Lightning-fast delivery across Europe.
           </p>
-          <Button size="lg" variant="secondary" asChild className="bg-white text-green-800 hover:bg-gray-100">
-            <Link href="/products">Browse All Products</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" variant="secondary" asChild className="bg-white text-green-800 hover:bg-gray-100">
+              <Link href="/products">Browse All Products</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white/20">
+              <Link href="/resources/programmatic-seo">Read Programmatic SEO Guide</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>
