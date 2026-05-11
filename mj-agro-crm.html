@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MJ Agro CRM | Lead Management & Analytics</title>
+  <!-- Tailwind CSS + Fonts (lightweight, modern) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    }
+    .font-mono-custom {
+      font-family: 'Space Mono', monospace;
+    }
+    body {
+      background: linear-gradient(135deg, #0a2e1a 0%, #1a4d2e 50%, #2d6d3f 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    /* Glass morphism */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(2px);
+      border-radius: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+    }
+    .glass-card-dark {
+      background: rgba(15, 35, 20, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .lead-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .lead-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.2);
+    }
+    .priority-high { border-left: 5px solid #dc2626; }
+    .priority-medium { border-left: 5px solid #f59e0b; }
+    .priority-low { border-left: 5px solid #10b981; }
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    .tab-active {
+      background: linear-gradient(135deg, #8BC34A 0%, #689F38 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(104, 159, 56, 0.3);
+    }
+    .status-badge {
+      @apply px-2.5 py-0.5 rounded-full text-xs font-semibold inline-block;
+    }
+    .progress-bar {
+      transition: width 0.6s ease;
+    }
+    input, select, textarea {
+      transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      ring: 2px solid #689F38;
+      border-color: #689F38;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-6">
+
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">🌾 MJ Agro CRM</h1>
+        <p class="text-green-100 text-sm mt-1">Lead engagement · Smart pipeline · Revenue-ready</p>
+      </div>
+      <button id="openAddLeadBtn" class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-semibold px-5 py-2 rounded-2xl transition-all shadow-md flex items-center gap-2">
+        <span class="text-xl">+</span> Add Lead
+      </button>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flex gap-2 mb-6 border-b border-white/20 pb-2">
+      <button data-tab="dashboard" class="tab-btn px-6 py-2 rounded-full font-medium transition-all bg-white/20 text-white">📊 Dashboard</button>
+      <button data-tab="leads" class="tab-btn px-6 py-2 rounded-full font-medium transition-all bg-white/20 text-white">👥 Lead Management</button>
+      <button data-tab="analytics" class="tab-btn px-6 py-2 rounded-full font-medium transition-all bg-white/20 text-white">📈 Analytics</button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboardTab" class="tab-content animate-fade-in">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="glass-card p-5">
+          <div class="text-3xl mb-1">🌱</div>
+          <div class="text-gray-500 text-sm">Total Leads</div>
+          <div class="text-3xl font-bold text-gray-800" id="statTotal">0</div>
+        </div>
+        <div class="glass-card p-5">
+          <div class="text-3xl mb-1">⭐</div>
+          <div class="text-gray-500 text-sm">Qualified (Score ≥70)</div>
+          <div class="text-3xl font-bold text-gray-800" id="statQualified">0</div>
+        </div>
+        <div class="glass-card p-5">
+          <div class="text-3xl mb-1">💰</div>
+          <div class="text-gray-500 text-sm">Pipeline Revenue (₹)</div>
+          <div class="text-3xl font-bold text-gray-800" id="statRevenue">0</div>
+        </div>
+        <div class="glass-card p-5">
+          <div class="text-3xl mb-1">📊</div>
+          <div class="text-gray-500 text-sm">Avg Lead Score</div>
+          <div class="text-3xl font-bold text-gray-800" id="statAvgScore">0</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Status distribution -->
+        <div class="glass-card p-5">
+          <h2 class="text-xl font-bold text-gray-800 mb-3">Lead Status</h2>
+          <div id="statusChart" class="space-y-3"></div>
+        </div>
+        <!-- Recent activity -->
+        <div class="glass-card p-5">
+          <h2 class="text-xl font-bold text-gray-800 mb-3">Recent Activity</h2>
+          <div id="recentActivityList" class="max-h-64 overflow-y-auto space-y-3"></div>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 mt-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-3">🔥 High Priority Leads (next actions)</h2>
+        <div id="highPriorityLeads" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- Leads Tab -->
+    <div id="leadsTab" class="tab-content hidden animate-fade-in">
+      <div class="glass-card p-5 mb-6">
+        <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div class="relative w-full md:w-80">
+            <input type="text" id="searchLeads" placeholder="🔍 Search by company, contact, location..." class="w-full px-4 py-2 rounded-full border border-gray-200 focus:ring-2 focus:ring-green-400">
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <select id="filterStatus" class="px-3 py-2 rounded-full border border-gray-200 bg-white text-sm">
+              <option value="all">All Status</option>
+              <option value="new">🆕 New</option>
+              <option value="contacted">📞 Contacted</option>
+              <option value="qualified">✅ Qualified</option>
+            </select>
+            <select id="filterPriority" class="px-3 py-2 rounded-full border border-gray-200 bg-white text-sm">
+              <option value="all">All Priority</option>
+              <option value="high">🔥 High</option>
+              <option value="medium">⚠️ Medium</option>
+              <option value="low">💚 Low</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="leadsContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div id="analyticsTab" class="tab-content hidden animate-fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card p-5">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">📁 Leads by Category</h2>
+          <div id="categoryChart" class="space-y-3"></div>
+        </div>
+        <div class="glass-card p-5">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">🌍 Geographic Distribution</h2>
+          <div id="geoChart" class="space-y-3"></div>
+        </div>
+        <div class="glass-card p-5 lg:col-span-2">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">💰 Revenue Pipeline (by status)</h2>
+          <div id="revenuePipeline" class="space-y-3"></div>
+          <div class="mt-4 text-center text-sm text-gray-500">* Potential revenue from all leads</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Lead Modal -->
+  <div id="leadModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-all">
+    <div class="bg-white rounded-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h3 class="text-2xl font-bold text-gray-800" id="modalTitle">Add New Lead</h3>
+        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+      </div>
+      <form id="leadForm" class="p-6 space-y-4">
+        <input type="hidden" id="leadId" value="">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium">Company *</label><input type="text" id="company" required class="w-full border rounded-lg p-2"></div>
+          <div><label class="block text-sm font-medium">Contact Person</label><input type="text" id="contact" class="w-full border rounded-lg p-2"></div>
+          <div><label class="block text-sm font-medium">Email *</label><input type="email" id="email" required class="w-full border rounded-lg p-2"></div>
+          <div><label class="block text-sm font-medium">Phone</label><input type="text" id="phone" class="w-full border rounded-lg p-2"></div>
+          <div><label class="block text-sm font-medium">Location</label><input type="text" id="location" class="w-full border rounded-lg p-2"></div>
+          <div><label class="block text-sm font-medium">Category</label>
+            <select id="category" class="w-full border rounded-lg p-2">
+              <option>Small Farm</option><option>Large Farm</option><option>Orchard</option><option>Cooperative</option><option>Distributor</option>
+            </select>
+          </div>
+          <div><label class="block text-sm font-medium">Lead Score (0-100)</label><input type="number" id="score" min="0" max="100" value="50" class="w-full border rounded-lg p-2"></div>
+          <div><label class="block text-sm font-medium">Status</label>
+            <select id="status" class="w-full border rounded-lg p-2"><option>new</option><option>contacted</option><option>qualified</option></select>
+          </div>
+          <div><label class="block text-sm font-medium">Priority</label>
+            <select id="priority" class="w-full border rounded-lg p-2"><option>high</option><option>medium</option><option>low</option></select>
+          </div>
+          <div><label class="block text-sm font-medium">Potential Revenue (₹)</label><input type="number" id="revenue" value="0" class="w-full border rounded-lg p-2"></div>
+          <div><label class="block text-sm font-medium">Next Action</label><input type="text" id="nextAction" placeholder="Call / Email / Demo" class="w-full border rounded-lg p-2"></div>
+        </div>
+        <div><label class="block text-sm font-medium">Products Interested</label><input type="text" id="products" placeholder="e.g., Rice, Spices, Pastes" class="w-full border rounded-lg p-2"></div>
+        <div><label class="block text-sm font-medium">Notes</label><textarea id="notes" rows="2" class="w-full border rounded-lg p-2"></textarea></div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="cancelModalBtn" class="px-4 py-2 border rounded-lg">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save Lead</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Activity Log Modal (on lead card) -->
+  <div id="activityModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">Log Activity</h3>
+        <button id="closeActivityModal" class="text-gray-400 text-2xl">&times;</button>
+      </div>
+      <input type="hidden" id="activityLeadId">
+      <select id="activityType" class="w-full border rounded-lg p-2 mb-3">
+        <option>Email Sent</option><option>Call Made</option><option>Meeting Scheduled</option><option>WhatsApp</option>
+      </select>
+      <input type="text" id="activitySubject" placeholder="Subject / Summary" class="w-full border rounded-lg p-2 mb-3">
+      <button id="saveActivityBtn" class="w-full bg-green-600 text-white py-2 rounded-lg">Add Activity</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------- DATA MODEL ----------
+    let leads = [];
+    let activities = [];  // { id, leadId, type, subject, date, user }
+
+    // Load from localStorage
+    function loadData() {
+      const storedLeads = localStorage.getItem('mjagro_leads');
+      const storedActivities = localStorage.getItem('mjagro_activities');
+      if(storedLeads) leads = JSON.parse(storedLeads);
+      else {
+        // seed data
+        leads = [
+          { id: 1, company: "GreenField Farms", contact: "Rajesh Kumar", email: "rajesh@greenfield.in", phone: "+91 98765 43210", location: "Punjab", category: "Large Farm", products: "Basmati Rice", score: 85, status: "qualified", priority: "high", created: "2025-03-10", lastContact: "2025-03-20", notes: "Ready to order 20MT", revenue: 450000, nextAction: "Send sample", assignedTo: "Amit" },
+          { id: 2, company: "Spice Valley Coop", contact: "Meera Nair", email: "meera@spicevalley.com", phone: "+91 99887 66554", location: "Kerala", category: "Cooperative", products: "Spices, Ginger paste", score: 72, status: "contacted", priority: "medium", notes: "Interested in bulk paste", revenue: 280000, nextAction: "Share pricing", assignedTo: "Priya" },
+          { id: 3, company: "EuroAgro Distributors", contact: "Hans Mueller", email: "hans@euroagro.de", location: "Germany", category: "Distributor", products: "All categories", score: 94, status: "qualified", priority: "high", revenue: 1200000, nextAction: "Contract draft", assignedTo: "Amit" },
+          { id: 4, company: "Orchard Fresh", contact: "Suresh Reddy", email: "suresh@orchardfresh.com", location: "Telangana", category: "Orchard", products: "Mango pulp", score: 45, status: "new", priority: "low", revenue: 95000, nextAction: "Intro call", assignedTo: "Rohan" }
+        ];
+        leads.forEach(l => { if(!l.created) l.created = new Date().toISOString().slice(0,10); if(!l.lastContact) l.lastContact = ""; });
+      }
+      if(storedActivities) activities = JSON.parse(storedActivities);
+      else {
+        activities = [
+          { id: 101, leadId: 1, type: "Email Sent", subject: "Catalog and pricing shared", date: new Date().toISOString(), user: "Amit" },
+          { id: 102, leadId: 3, type: "Meeting Scheduled", subject: "Zoom call for contract", date: new Date().toISOString(), user: "Amit" }
+        ];
+      }
+      renderAll();
+    }
+
+    function saveToLocal() {
+      localStorage.setItem('mjagro_leads', JSON.stringify(leads));
+      localStorage.setItem('mjagro_activities', JSON.stringify(activities));
+    }
+
+    // Helper: Add activity
+    function addActivity(leadId, type, subject) {
+      const newAct = { id: Date.now(), leadId, type, subject, date: new Date().toISOString(), user: "Sales Team" };
+      activities.unshift(newAct);
+      saveToLocal();
+      // update lastContact for lead
+      const lead = leads.find(l => l.id === leadId);
+      if(lead) { lead.lastContact = new Date().toISOString().slice(0,10); saveToLocal(); }
+      renderAll();
+      showToast("Activity logged");
+    }
+
+    // CRUD
+    function addOrUpdateLead(leadData) {
+      if(leadData.id) {
+        // update
+        const idx = leads.findIndex(l => l.id === leadData.id);
+        if(idx !== -1) leads[idx] = { ...leads[idx], ...leadData };
+      } else {
+        // create new
+        const newId = Date.now();
+        leads.push({ id: newId, ...leadData, created: new Date().toISOString().slice(0,10), lastContact: "" });
+      }
+      saveToLocal();
+      renderAll();
+      closeModal();
+      showToast("Lead saved");
+    }
+
+    function deleteLead(id) {
+      if(confirm("Delete this lead? All activities will be removed.")) {
+        leads = leads.filter(l => l.id !== id);
+        activities = activities.filter(a => a.leadId !== id);
+        saveToLocal();
+        renderAll();
+        showToast("Lead deleted");
+      }
+    }
+
+    // RENDER all tabs
+    function renderAll() {
+      renderDashboard();
+      renderLeadsList();
+      renderAnalytics();
+    }
+
+    function renderDashboard() {
+      const total = leads.length;
+      const qualified = leads.filter(l => l.score >= 70).length;
+      const totalRevenue = leads.reduce((sum, l) => sum + (l.revenue || 0), 0);
+      const avgScore = total ? Math.round(leads.reduce((s,l)=> s + (l.score||0),0)/total) : 0;
+      document.getElementById('statTotal').innerText = total;
+      document.getElementById('statQualified').innerText = qualified;
+      document.getElementById('statRevenue').innerText = totalRevenue.toLocaleString('en-IN');
+      document.getElementById('statAvgScore').innerText = avgScore;
+
+      // status distribution
+      const statusCount = { new: leads.filter(l=>l.status==='new').length, contacted: leads.filter(l=>l.status==='contacted').length, qualified: leads.filter(l=>l.status==='qualified').length };
+      const statusDiv = document.getElementById('statusChart');
+      statusDiv.innerHTML = `
+        <div><div class="flex justify-between"><span>🆕 New</span><span>${statusCount.new}</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full progress-bar" style="width:${total? (statusCount.new/total)*100 : 0}%"></div></div></div>
+        <div><div class="flex justify-between"><span>📞 Contacted</span><span>${statusCount.contacted}</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-yellow-500 h-2 rounded-full" style="width:${total? (statusCount.contacted/total)*100 : 0}%"></div></div></div>
+        <div><div class="flex justify-between"><span>✅ Qualified</span><span>${statusCount.qualified}</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width:${total? (statusCount.qualified/total)*100 : 0}%"></div></div></div>
+      `;
+
+      // recent activities
+      const recent = activities.slice(0,5);
+      document.getElementById('recentActivityList').innerHTML = recent.map(a => `<div class="text-sm border-b pb-2"><span class="font-semibold">${a.type}</span> on ${new Date(a.date).toLocaleDateString()}: ${a.subject} <span class="text-gray-500 text-xs">(Lead ID ${a.leadId})</span></div>`).join('') || '<div class="text-gray-400">No activities yet</div>';
+
+      // high priority leads
+      const highPriority = leads.filter(l => l.priority === 'high').slice(0,4);
+      document.getElementById('highPriorityLeads').innerHTML = highPriority.map(l => `<div class="glass-card p-3 bg-white/80"><div><strong>${l.company}</strong> <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">🔥 High</span></div><div class="text-sm">Next: ${l.nextAction || 'Follow up'}</div></div>`).join('') || '<div class="text-gray-500">No high priority leads</div>';
+    }
+
+    function renderLeadsList() {
+      const searchTerm = (document.getElementById('searchLeads')?.value || "").toLowerCase();
+      const statusFilter = document.getElementById('filterStatus')?.value || "all";
+      const priorityFilter = document.getElementById('filterPriority')?.value || "all";
+      let filtered = leads.filter(l => 
+        (l.company.toLowerCase().includes(searchTerm) || (l.contact && l.contact.toLowerCase().includes(searchTerm)) || (l.location && l.location.toLowerCase().includes(searchTerm))) &&
+        (statusFilter === "all" || l.status === statusFilter) &&
+        (priorityFilter === "all" || l.priority === priorityFilter)
+      );
+      const container = document.getElementById('leadsContainer');
+      if(filtered.length === 0) { container.innerHTML = '<div class="col-span-full text-center py-10 text-white/80">No leads found</div>'; return; }
+      container.innerHTML = filtered.map(lead => `
+        <div class="glass-card p-4 lead-card ${lead.priority === 'high' ? 'priority-high' : lead.priority === 'medium' ? 'priority-medium' : 'priority-low'}">
+          <div class="flex justify-between items-start">
+            <div><h3 class="font-bold text-lg">${escapeHtml(lead.company)}</h3><p class="text-sm text-gray-500">${lead.location || '—'} · ${lead.category}</p></div>
+            <span class="text-xs font-bold px-2 py-1 rounded-full ${lead.score>=70 ? 'bg-green-100 text-green-800' : 'bg-gray-100'}">Score ${lead.score}</span>
+          </div>
+          <div class="mt-2 grid grid-cols-2 gap-1 text-sm"><span>📧 ${lead.email}</span><span>📞 ${lead.phone || '—'}</span></div>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs"><span class="bg-gray-100 px-2 py-0.5 rounded-full">${lead.status}</span><span class="bg-gray-100 px-2 py-0.5 rounded-full">💰 ₹${(lead.revenue||0).toLocaleString()}</span></div>
+          <p class="text-sm mt-2 text-gray-600">${lead.notes ? lead.notes.substring(0,80) : '—'}</p>
+          <div class="mt-3 flex justify-between items-center">
+            <button onclick="openActivityModal(${lead.id})" class="text-xs bg-gray-100 px-3 py-1 rounded-full">📝 Log activity</button>
+            <div><button onclick="editLead(${lead.id})" class="text-green-700 text-sm mr-2">Edit</button><button onclick="deleteLead(${lead.id})" class="text-red-600 text-sm">Delete</button></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAnalytics() {
+      // category breakdown
+      const categoryMap = {};
+      leads.forEach(l => { categoryMap[l.category] = (categoryMap[l.category] || 0) + 1; });
+      const catHtml = Object.entries(categoryMap).map(([cat, count]) => `<div><div class="flex justify-between"><span>${cat}</span><span>${count}</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-teal-500 h-2 rounded-full" style="width:${(count/leads.length)*100}%"></div></div></div>`).join('');
+      document.getElementById('categoryChart').innerHTML = catHtml || '<div>No data</div>';
+
+      // geo distribution (just location)
+      const geoMap = {};
+      leads.forEach(l => { if(l.location) geoMap[l.location] = (geoMap[l.location] || 0)+1; });
+      const geoHtml = Object.entries(geoMap).slice(0,5).map(([loc, cnt]) => `<div>📍 ${loc}: ${cnt} lead${cnt>1?'s':''}</div>`).join('');
+      document.getElementById('geoChart').innerHTML = geoHtml || 'No location data';
+
+      // revenue pipeline by status
+      const revenueByStatus = { new:0, contacted:0, qualified:0 };
+      leads.forEach(l => { if(l.revenue) revenueByStatus[l.status] += l.revenue; });
+      const maxRev = Math.max(...Object.values(revenueByStatus),1);
+      const pipelineHtml = `
+        <div><div class="flex justify-between">🆕 New</div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-blue-500 h-4 rounded-full" style="width:${(revenueByStatus.new/maxRev)*100}%"> ₹${revenueByStatus.new.toLocaleString()}</div></div></div>
+        <div><div class="flex justify-between">📞 Contacted</div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-yellow-500 h-4 rounded-full" style="width:${(revenueByStatus.contacted/maxRev)*100}%"> ₹${revenueByStatus.contacted.toLocaleString()}</div></div></div>
+        <div><div class="flex justify-between">✅ Qualified</div><div class="w-full bg-gray-200 rounded-full h-4"><div class="bg-green-500 h-4 rounded-full" style="width:${(revenueByStatus.qualified/maxRev)*100}%"> ₹${revenueByStatus.qualified.toLocaleString()}</div></div></div>
+      `;
+      document.getElementById('revenuePipeline').innerHTML = pipelineHtml;
+    }
+
+    // Modal logic
+    const modal = document.getElementById('leadModal');
+    function openModal(lead = null) {
+      document.getElementById('leadForm').reset();
+      document.getElementById('leadId').value = '';
+      document.getElementById('modalTitle').innerText = 'Add New Lead';
+      if(lead) {
+        document.getElementById('leadId').value = lead.id;
+        document.getElementById('company').value = lead.company || '';
+        document.getElementById('contact').value = lead.contact || '';
+        document.getElementById('email').value = lead.email || '';
+        document.getElementById('phone').value = lead.phone || '';
+        document.getElementById('location').value = lead.location || '';
+        document.getElementById('category').value = lead.category || 'Small Farm';
+        document.getElementById('score').value = lead.score || 50;
+        document.getElementById('status').value = lead.status || 'new';
+        document.getElementById('priority').value = lead.priority || 'medium';
+        document.getElementById('revenue').value = lead.revenue || 0;
+        document.getElementById('nextAction').value = lead.nextAction || '';
+        document.getElementById('products').value = lead.products || '';
+        document.getElementById('notes').value = lead.notes || '';
+        document.getElementById('modalTitle').innerText = 'Edit Lead';
+      }
+      modal.classList.remove('hidden');
+    }
+    function closeModal() { modal.classList.add('hidden'); }
+    window.editLead = (id) => { const lead = leads.find(l => l.id === id); if(lead) openModal(lead); };
+    document.getElementById('openAddLeadBtn').onclick = () => openModal(null);
+    document.getElementById('closeModalBtn').onclick = closeModal;
+    document.getElementById('cancelModalBtn').onclick = closeModal;
+    document.getElementById('leadForm').onsubmit = (e) => {
+      e.preventDefault();
+      const leadData = {
+        id: parseInt(document.getElementById('leadId').value) || null,
+        company: document.getElementById('company').value,
+        contact: document.getElementById('contact').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        location: document.getElementById('location').value,
+        category: document.getElementById('category').value,
+        products: document.getElementById('products').value,
+        score: parseInt(document.getElementById('score').value),
+        status: document.getElementById('status').value,
+        priority: document.getElementById('priority').value,
+        revenue: parseInt(document.getElementById('revenue').value),
+        nextAction: document.getElementById('nextAction').value,
+        notes: document.getElementById('notes').value,
+        assignedTo: "Sales"
+      };
+      addOrUpdateLead(leadData);
+    };
+
+    // Activity modal
+    const actModal = document.getElementById('activityModal');
+    window.openActivityModal = (leadId) => {
+      document.getElementById('activityLeadId').value = leadId;
+      actModal.classList.remove('hidden');
+    };
+    document.getElementById('closeActivityModal').onclick = () => actModal.classList.add('hidden');
+    document.getElementById('saveActivityBtn').onclick = () => {
+      const leadId = parseInt(document.getElementById('activityLeadId').value);
+      const type = document.getElementById('activityType').value;
+      const subject = document.getElementById('activitySubject').value;
+      if(!subject) { alert("Please enter a summary"); return; }
+      addActivity(leadId, type, subject);
+      actModal.classList.add('hidden');
+      document.getElementById('activitySubject').value = '';
+    };
+
+    // Tabs & filters
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`${tabId}Tab`).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active', 'text-white'));
+      document.querySelector(`[data-tab="${tabId}"]`).classList.add('tab-active', 'text-white');
+      if(tabId === 'leads') renderLeadsList();
+      if(tabId === 'analytics') renderAnalytics();
+    }
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', (e) => { switchTab(btn.getAttribute('data-tab')); }));
+    document.getElementById('searchLeads')?.addEventListener('input', () => renderLeadsList());
+    document.getElementById('filterStatus')?.addEventListener('change', () => renderLeadsList());
+    document.getElementById('filterPriority')?.addEventListener('change', () => renderLeadsList());
+    
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    function showToast(msg) { const toast = document.createElement('div'); toast.innerText = msg; toast.className = 'fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg z-50'; document.body.appendChild(toast); setTimeout(()=>toast.remove(),2000); }
+    
+    loadData();
+    switchTab('dashboard');
+  </script>
+</body>
+</html>
